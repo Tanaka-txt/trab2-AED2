@@ -45,6 +45,28 @@ int main() {
           scanf("%s %d", arq_bin, &RRN);
           busca_por_rrn(arq_bin, RRN);
           break;
+        
+        case 5:
+          /*Função*/
+          // printf("5\n");
+          scanf("%s %s", arq_bin, arq_csv);
+          funcionalidade5(arq_bin, arq_csv);
+          break;
+        
+          case 6:
+          /*Função*/
+          // printf("6\n");
+          break;
+
+          case 7:
+          /*Função*/
+          // printf("7\n");
+          break;
+
+          case 8:
+          /*Função*/
+          // printf("8\n");
+          break;
 
         case 0 :
           /*Exit*/
