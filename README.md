@@ -1,6 +1,3 @@
-Aqui está o conteúdo formatado diretamente em um bloco de código Markdown. Assim, você pode copiar e colar facilmente no seu editor ou repositório (como no README do projeto).
-
-```markdown
 ## ⚠️ Restrições Gerais do Projeto
 Antes de iniciar as funcionalidades, certifique-se de que sua implementação em **C** garanta as seguintes regras globais:
 
@@ -93,4 +90,3 @@ Antes de iniciar as funcionalidades, certifique-se de que sua implementação em
     * *Sucesso:* Executar `binarioNaTela()` para o arquivo de dados e para o arquivo de índice.
     * *Erro:* Exibir `Falha no processamento do arquivo.`
 
-```
