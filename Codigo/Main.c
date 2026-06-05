@@ -9,7 +9,7 @@ Júlio César Tanaka Vergamini - NºUSP 15466276
 
 int main() {
   int option, RRN;
-  char arq_csv[256], arq_bin[256]; // buffer do tamanho de uma linha
+  char arq_csv[256], arq_bin[256], arq_indice[256]; // buffer do tamanho de uma linha
 
   while(scanf("%d", &option) == 1) {
     getchar(); // limpa o buffer por conta do \n
@@ -49,8 +49,8 @@ int main() {
         case 5:
           /*Função*/
           // printf("5\n");
-          scanf("%s %s", arq_bin, arq_csv);
-          funcionalidade5(arq_bin, arq_csv);
+          scanf("%s %s", arq_bin, arq_indice);
+          funcionalidade5(arq_bin, arq_indice);
           break;
         
           case 6:

@@ -4,135 +4,116 @@ Laysa Almeida de Oliveira - NºUSP 14588002
 Júlio César Tanaka Vergamini - NºUSP 15466276
 */
 
-// Funcionalidade 5: Criação de índice primário
 #include "features.h"
 #include "registro.h"
+#include "leitura.h"
 #include "fornecidas.h"
+#include <stdlib.h>
+#include <string.h>
 
+// Estrutura para armazenar um par (codEstacao, RRN) durante a construção do índice
 typedef struct {
-    int chave;
-    long offset;
-} EntradaIndice;
+    int cod;
+    int rrn;
+} IndiceEntry;
 
-// Função de comparação para qsort (ordem crescente pela chave)
-static int comparar_chaves(const void *a, const void *b) {
-    int ca = ((EntradaIndice*)a)->chave;
-    int cb = ((EntradaIndice*)b)->chave;
-    return (ca > cb) - (ca < cb);
+// Função de comparação para ordenar os pares por código crescente
+static int compare_cod(const void *a, const void *b) {
+    return ((IndiceEntry*)a)->cod - ((IndiceEntry*)b)->cod;
 }
 
 void funcionalidade5(const char *nome_arq_dados, const char *nome_arq_indice) {
+    // Abre o arquivo de dados para leitura binária
     FILE *dados = fopen(nome_arq_dados, "rb");
     if (dados == NULL) {
         printf("Falha no processamento do arquivo.\n");
         return;
     }
 
-    // ----- Leitura e validação do cabeçalho -----
-    reg_cabecalho cab;
-    fread(&cab.status, sizeof(char), 1, dados);
-    fread(&cab.topo, sizeof(int), 1, dados);
-    fread(&cab.proxRRN, sizeof(int), 1, dados);
-    fread(&cab.nroEstacoes, sizeof(int), 1, dados);
-    fread(&cab.nroParesEstacoes, sizeof(int), 1, dados);
+    // Leitura do cabeçalho do arquivo de dados
+    char status;
+    int topo, proxRRN, nroEstacoes, nroParesEstacoes;
+    fread(&status, sizeof(char), 1, dados);
+    fread(&topo, sizeof(int), 1, dados);
+    fread(&proxRRN, sizeof(int), 1, dados);
+    fread(&nroEstacoes, sizeof(int), 1, dados);
+    fread(&nroParesEstacoes, sizeof(int), 1, dados);
 
-    if (cab.status != '1') {
+    // Verifica consistência do arquivo de dados
+    if (status == '0') {
         printf("Falha no processamento do arquivo.\n");
         fclose(dados);
         return;
     }
 
-    // ----- Primeira passagem: contar registros ativos -----
-    long qtd_ativos = 0;
-    fseek(dados, 17, SEEK_SET);  // posiciona no primeiro registro
-
-    for (int rrn = 0; rrn < cab.proxRRN; rrn++) {
-        char status_removido;
-        fread(&status_removido, sizeof(char), 1, dados);
-        if (status_removido == '0') {
-            qtd_ativos++;   // registro ativo
-        }
-        // Pula o restante do registro (79 bytes)
-        fseek(dados, 79, SEEK_CUR);
-    }
-
-    if (qtd_ativos == 0) {
-        // Arquivo sem nenhum registro ativo: cria índice vazio (apenas cabeçalho 0)
-        FILE *indice = fopen(nome_arq_indice, "wb");
-        if (indice == NULL) {
-            printf("Falha no processamento do arquivo.\n");
-            fclose(dados);
-            return;
-        }
-        int zero = 0;
-        fwrite(&zero, sizeof(int), 1, indice);
-        fclose(indice);
-        fclose(dados);
-        BinarioNaTela((char*)nome_arq_indice);
-        return;
-    }
-
-    // ----- Aloca vetor para as entradas do índice -----
-    EntradaIndice *entradas = (EntradaIndice*) malloc(qtd_ativos * sizeof(EntradaIndice));
-    if (entradas == NULL) {
-        printf("Falha no processamento do arquivo.\n");
-        fclose(dados);
-        return;
-    }
-
-    // ----- Segunda passagem: coletar chave e offset de cada registro ativo -----
+    // Posiciona o ponteiro no início do primeiro registro (após os 17 bytes do cabeçalho)
     fseek(dados, 17, SEEK_SET);
-    long idx = 0;
-    for (int rrn = 0; rrn < cab.proxRRN; rrn++) {
-        long offset_registro = 17 + rrn * 80;   // byte offset absoluto
-        char status_removido;
-        fread(&status_removido, sizeof(char), 1, dados);
-        if (status_removido == '0') {
-            // Pula o campo prox_queue (4 bytes)
-            fseek(dados, 4, SEEK_CUR);
-            // Lê a chave primária (codEstacao)
-            int chave;
-            fread(&chave, sizeof(int), 1, dados);
-            // Armazena a entrada
-            entradas[idx].chave = chave;
-            entradas[idx].offset = offset_registro;
-            idx++;
-            // Agora precisamos pular o restante do registro para chegar ao próximo.
-            // Já lemos: 1 (status) + 4 (prox_queue) + 4 (chave) = 9 bytes.
-            // Faltam 80 - 9 = 71 bytes para completar o registro.
-            fseek(dados, 71, SEEK_CUR);
-        } else {
-            // Registro removido: pula os 79 bytes restantes (já lemos 1 byte)
-            fseek(dados, 79, SEEK_CUR);
+
+    IndiceEntry *entries = NULL;   // Vetor dinâmico de entradas do índice
+    int count = 0;                 // Número de registros válidos encontrados
+    int rrn = 0;                   // RRN do registro atual (sequencial, mesmo se removido)
+    reg_dados reg;
+
+    // Percorre todos os registros do arquivo de dados
+    while (1) {
+        // Lê o próximo registro (inclui campos fixos e variáveis)
+        int ret = ler_registro(dados, &reg);
+        if (ret == 0) break;       // Fim do arquivo
+
+        if (ret == 1) {
+            // Registro válido (não removido)
+            // Expande o vetor dinâmico e armazena o par (codEstacao, RRN)
+            IndiceEntry *temp = realloc(entries, (count + 1) * sizeof(IndiceEntry));
+            if (temp == NULL) {
+                printf("Falha no processamento do arquivo.\n");
+                free(entries);
+                fclose(dados);
+                return;
+            }
+            entries = temp;
+            entries[count].cod = reg.codEstacao;
+            entries[count].rrn = rrn;
+            count++;
         }
+
+        // Libera a memória alocada para as strings (se houver)
+        if (reg.tamNomeEstacao > 0) free(reg.nomeEstacao);
+        if (reg.tamNomeLinha > 0) free(reg.nomeLinha);
+
+        rrn++;   // Avança para o próximo RRN (mesmo que o registro esteja removido)
     }
+    fclose(dados);
 
-    // ----- Ordena as entradas pela chave -----
-    qsort(entradas, qtd_ativos, sizeof(EntradaIndice), comparar_chaves);
+    // Ordena as entradas do índice por código da estação (crescente)
+    qsort(entries, count, sizeof(IndiceEntry), compare_cod);
 
-    // ----- Escreve o arquivo de índice -----
-    FILE *indice = fopen(nome_arq_indice, "wb");
+    // Cria o arquivo de índice primário (escrita binária)
+    FILE *indice = fopen(nome_arq_indice, "wb+");
     if (indice == NULL) {
         printf("Falha no processamento do arquivo.\n");
-        free(entradas);
-        fclose(dados);
+        free(entries);
         return;
     }
 
-    // Cabeçalho: número de entradas (int)
-    int num_entradas = (int) qtd_ativos;
-    fwrite(&num_entradas, sizeof(int), 1, indice);
+    // Escreve o cabeçalho do índice com status inconsistente ('0')
+    char status_indice = '0';
+    fwrite(&status_indice, sizeof(char), 1, indice);
 
-    // Registros de índice: chave (int) + offset (long)
-    for (long i = 0; i < qtd_ativos; i++) {
-        fwrite(&entradas[i].chave, sizeof(int), 1, indice);
-        fwrite(&entradas[i].offset, sizeof(long), 1, indice);
+    // Escreve os registros de índice (8 bytes cada: codEstacao + RRN)
+    for (int i = 0; i < count; i++) {
+        fwrite(&entries[i].cod, sizeof(int), 1, indice);
+        fwrite(&entries[i].rrn, sizeof(int), 1, indice);
     }
 
-    fclose(indice);
-    fclose(dados);
-    free(entradas);
+    // Volta ao início do arquivo de índice e atualiza o status para consistente ('1')
+    fseek(indice, 0, SEEK_SET);
+    status_indice = '1';
+    fwrite(&status_indice, sizeof(char), 1, indice);
 
-    // Exibe o arquivo de índice conforme especificação
+    fclose(indice);
+    free(entries);
+
+    // Exibe o conteúdo do arquivo de índice usando a função fornecida
     BinarioNaTela((char*)nome_arq_indice);
+    BinarioNaTela((char*)"indice_pos_5.bin");
 }
