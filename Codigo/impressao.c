@@ -1,58 +1,55 @@
-/*
-Membros do grupo:
-Laysa Almeida de Oliveira - NºUSP 14588002
-Júlio César Tanaka Vergamini - NºUSP 15466276
-*/
-
-/*
-- para cada linha válida, imprimir os dados em uma única linha no terminal, separando tudo por um espaço em branco
-- a ordem de impressão tem que ser exatamente esta: código da estação, nome da estação, código da linha, nome da linha, código da próxima estação, distância, código da integração e, por fim, a estação de integração.
-- antes do nome da estação tem um nº que indica o tamanho daquele nome --> se for 0 imprime NULO
-- como 'registro' é um ponteiro para a struct, foi usado o operador de seta '->' para acessar os campos internos
-*/
-
 #include "impressao.h"
 
-void imprimir_registro (reg_dados *registro){ // recebe um ponteiro (*registro) do tipo reg_dados
-    
-    printf("%d %s ", registro->codEstacao, registro->nomeEstacao); // nunca vão ser nulas, por isso não precisa de verificação
+void imprimir_registro(reg_dados *registro) {
+    // 1. codEstacao
+    printf("%d ", registro->codEstacao);
 
-    // campos fixos que tiverem o valor nulo, recebem o valor -1 na leitura e tem que printar NULO
-    // campos variáveis que tiverem o valor nulo, tem indicador de tamanho igua a 0 e devem printar NULO
+    // 2. nomeEstacao (Tratando caso o nome seja vazio)
+    if (registro->tamNomeEstacao == 0 || registro->nomeEstacao == NULL) {
+        printf("NULO ");
+    } else {
+        printf("%s ", registro->nomeEstacao);
+    }
 
+    // 3. codLinha
     if (registro->codLinha == -1) {
-        printf("NULO "); // substitui a impressão do -1 pela palavra "NULO"
-    } else{
+        printf("NULO ");
+    } else {
         printf("%d ", registro->codLinha);
     }
 
-    if (registro->tamNomeLinha == 0){
+    // 4. nomeLinha
+    if (registro->tamNomeLinha == 0 || registro->nomeLinha == NULL) {
         printf("NULO ");
-    }else {
-        printf("%s ", registro->nomeLinha); // se o tamanho for maior que 0, a string existe e pode ser impressa
+    } else {
+        printf("%s ", registro->nomeLinha);
     }
 
-    if (registro->codProxEstacao == -1){
+    // 5. codProxEstacao
+    if (registro->codProxEstacao == -1) {
         printf("NULO ");
-    }else {
+    } else {
         printf("%d ", registro->codProxEstacao);
     }
 
-    if (registro->distProxEstacao == -1){
+    // 6. distProxEstacao
+    if (registro->distProxEstacao == -1) {
         printf("NULO ");
-    }else {
+    } else {
         printf("%d ", registro->distProxEstacao);
     }
 
-    if (registro->codLinhaIntegra == -1){
+    // 7. codLinhaIntegra
+    if (registro->codLinhaIntegra == -1) {
         printf("NULO ");
-    }else {
+    } else {
         printf("%d ", registro->codLinhaIntegra);
     }
 
-    if (registro->codEstIntegra == -1){
-        printf("NULO\n");
-    }else {
-        printf("%d\n", registro->codEstIntegra);
+    // 8. codEstIntegra (Modificado para \n\n para dar o espaçamento de uma linha em branco ao final)
+    if (registro->codEstIntegra == -1) {
+        printf("NULO\n\n");
+    } else {
+        printf("%d\n\n", registro->codEstIntegra);
     }
 }

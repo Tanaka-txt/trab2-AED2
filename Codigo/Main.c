@@ -8,7 +8,7 @@ Júlio César Tanaka Vergamini - NºUSP 15466276
 
 
 int main() {
-  int option, RRN;
+  int option, RRN, n;
   char arq_csv[256], arq_bin[256], arq_indice[256]; // buffer do tamanho de uma linha
 
   while(scanf("%d", &option) == 1) {
@@ -56,6 +56,9 @@ int main() {
           case 6:
           /*Função*/
           // printf("6\n");
+          // Leitura dos nomes dos arquivos e número de buscas
+          scanf("%s %s %d", arq_bin, arq_indice, &n);
+          funcionalidade6(arq_bin, arq_indice, n);
           break;
 
           case 7:
@@ -68,8 +71,10 @@ int main() {
           // printf("8\n");
           break;
 
-        case 0 :
+          case 9 :
           /*Exit*/
+          scanf("%s %s %d", arq_bin, arq_indice, &n);
+          funcionalidade9(arq_bin, arq_indice, n);
           break;
 
         default:
