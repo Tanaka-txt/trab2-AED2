@@ -14,15 +14,9 @@ int main() {
   while(scanf("%d", &option) == 1) {
     getchar(); // limpa o buffer por conta do \n
       switch (option){
-        case 1 :
-          /*Função*/
-          // printf("1\n");
-
-          // Verificamos se a entrada é diferente de vazio
+        case 1:
           scanf("%s %s", arq_csv, arq_bin);
-          create_cabecalho();
-          create_regi_bin(arq_csv, arq_bin);
-          // BinarioNaTela("estacoes.bin"); teste para ver 
+          create_regi_bin(arq_csv, arq_bin); 
           break;
 
         case 2 :
@@ -46,9 +40,23 @@ int main() {
           busca_por_rrn(arq_bin, RRN);
           break;
 
+        case 7: {
+            char arq_dados[50], arq_indice[50];
+            scanf("%s %s", arq_dados, arq_indice); 
+            remover_bin(arq_dados, arq_indice);
+            break; 
+        }
+
+        case 8: {
+            char arq_dados[50], arq_indice[50];
+            scanf("%s %s", arq_dados, arq_indice); 
+            inserir_bin(arq_dados, arq_indice);
+            break; 
+        }
+        
         case 0 :
           /*Exit*/
-          break;
+          return 0;
 
         default:
         /* Caso que não é nenhum da erro ex. -1 -2  9 */

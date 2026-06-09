@@ -10,10 +10,11 @@ Júlio César Tanaka Vergamini - NºUSP 15466276
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "registro.h"
 
 // func1 - protótipos
 void create_regi_bin(char *arq_csv, char *arq_bin);
-void create_cabecalho();
+void create_cabecalho(reg_cabecalho *cabecalho); 
 
 // Func2- 
 void read_bin(char *arq_bin);
@@ -24,5 +25,10 @@ void busca_bin(char *arq_bin);
 // Func4-
 int busca_por_rrn(char *arquivo, int posi_relativa);
 
+// Func7-
+void remover_bin(char *arq_dados, char *arq_indice);
+
+// Func8-
+void inserir_bin(char *arq_dados, char *arq_indice);
 
 #endif

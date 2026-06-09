@@ -9,7 +9,8 @@ Júlio César Tanaka Vergamini - NºUSP 15466276
 #include "registro.h"
 #include "fornecidas.h"
 
-// Definição de Var
+/* REMOVER VÁRIÁVEIS GLOBAIS*/
+/*// Definição de Var
 int ultimoRRN = 0; // tem que apontar para uma atualização do RRN
 
 // Nro estacoes
@@ -30,17 +31,23 @@ typedef struct{
 // Pares Estações
 Par *pares = NULL; // é um ponteiro que inicializa como vazio
 int total_pares = 0;
+*/
+
+typedef struct {
+    int origem;
+    int destino;
+} Par;
 
 // chama protótipo de func
 void write_registro_bin(reg_dados dados, FILE *binario); // Chamando ele aqui para usar no read csv
 
 // Inicio Funções
-void create_cabecalho(){
-    cabecalho.status = '1';
-    cabecalho.topo = -1;
-    cabecalho.proxRRN = 0; // Comeã em 0, 0+1 = 1
-    cabecalho.nroEstacoes = 0;
-    cabecalho.nroParesEstacoes = 0;
+void create_cabecalho(reg_cabecalho *cabecalho){
+    cabecalho->status = '1';
+    cabecalho->topo = -1;
+    cabecalho->proxRRN = 0;
+    cabecalho->nroEstacoes = 0;
+    cabecalho->nroParesEstacoes = 0;
 }
 
 // Funções para registrar no cabeçalho
@@ -65,15 +72,25 @@ int existe_par(int a, int b, Par *lista, int tamanho){ // recebe A como origem e
 void create_regi_bin(char arq_csv[256], char arq_bin[256]){
     // =-=-= Abrimos o Arquivo CSV e Binário=-=-=
     FILE *csv = fopen(arq_csv, "r"); 
-    FILE *binario = fopen(arq_bin, "wb+"); 
+    FILE *binario = fopen(arq_bin, "wb"); 
 
     if(csv == NULL || binario == NULL){  // Verificação se foi possível abrir os arquivos
         printf("Falha no processamento do arquivo.");
         return;
     }
 
+    reg_cabecalho cabecalho;
+    reg_dados registro;
+
+    char **estacao = NULL;
+    int total_estacoes = 0;
+
+    Par *pares = NULL;
+    int total_pares = 0;
+    int ultimoRRN = 0;
+
     // =-=-= Cabeçalho =-=-= 
-    create_cabecalho(); // Cria cabeçalho
+    create_cabecalho(&cabecalho); // Cria cabeçalho
 
     // Consistencia do cabeçalho (0 pois vamos escrever nele)
     cabecalho.status = '0'; // agora inconsistente
