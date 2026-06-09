@@ -8,8 +8,8 @@ Júlio César Tanaka Vergamini - NºUSP 15466276
 
 
 int main() {
-  int option, RRN;
-  char arq_csv[256], arq_bin[256]; // buffer do tamanho de uma linha
+  int option, RRN, n;
+  char arq_csv[256], arq_bin[256], arq_indice[256]; // buffer do tamanho de uma linha
 
   while(scanf("%d", &option) == 1) {
     getchar(); // limpa o buffer por conta do \n
@@ -40,19 +40,15 @@ int main() {
           busca_por_rrn(arq_bin, RRN);
           break;
 
-        case 7: {
-            char arq_dados[50], arq_indice[50];
-            scanf("%s %s", arq_dados, arq_indice); 
-            remover_bin(arq_dados, arq_indice);
-            break; 
-        }
+        case 7:
+          scanf("%s %s %d", arq_bin, arq_indice, &n);
+          funcionalidade7(arq_bin, arq_indice, n);
+          break;
 
-        case 8: {
-            char arq_dados[50], arq_indice[50];
-            scanf("%s %s", arq_dados, arq_indice); 
-            inserir_bin(arq_dados, arq_indice);
-            break; 
-        }
+        case 8:
+          scanf("%s %s %d", arq_bin, arq_indice, &n);
+          funcionalidade8(arq_bin, arq_indice, n);
+          break;
         
         case 0 :
           /*Exit*/

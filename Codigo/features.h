@@ -26,9 +26,9 @@ void busca_bin(char *arq_bin);
 int busca_por_rrn(char *arquivo, int posi_relativa);
 
 // Func7-
-void remover_bin(char *arq_dados, char *arq_indice);
+void funcionalidade7(const char *arq_dados, const char *arq_indice, int n);
 
 // Func8-
-void inserir_bin(char *arq_dados, char *arq_indice);
+void funcionalidade8(const char *arq_dados, const char *arq_indice, int n);
 
 #endif
