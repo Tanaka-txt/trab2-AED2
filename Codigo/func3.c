@@ -1,10 +1,4 @@
 /*
-Membros do grupo:
-Laysa Almeida de Oliveira - NºUSP 14588002
-Júlio César Tanaka Vergamini - NºUSP 15466276
-*/
-
-/*
 - realizar uma busca por critério --> abrir o arquivo, pular o cabeçalho e usar o while para ler linha por linha (80 em 80 bytes), mas com a opção de procurar por algo
 - o programa vai ler o que o usuário quer buscar (o nome do campo) e qual é o valor (o critério)
 - antes de finalizar e printar igual a func2, precisa de um if de verificação, para saber se a informação lida para comparar com o que está sendo buscado
@@ -110,13 +104,14 @@ void busca_bin(char *arq_bin){
                 if (strcmp(aux, "NULO") == 0) painel.valor_codEstIntegra = -1;
                 else painel.valor_codEstIntegra = atoi(aux);
             }
-        }    
+        }  
         
         fseek(teste, 17, SEEK_SET); // pula o cabeçalho para iniciar a leitura
         
         int registroValido = 0; // contador para ver quantas buscas deram certo 
         reg_dados registro;     // struct que guarda o que acabou de ser lido
         int status_leitura;     // variável para ser ajudante de leitura da função ler_registro
+        int encontrou = 0;      // flag para indicar que já encontrou um registro com codEstacao
 
         while (1){
             memset(&registro, 0, sizeof(reg_dados)); // zerando a struct para garantir que os ponteiros comecem como NULL
@@ -147,18 +142,29 @@ void busca_bin(char *arq_bin){
             */
 
             if (pontos == m){ // se a quantidade de pontos for igual ao nº de exigências vai ser um registro válido
-                registroValido ++; // ncrementa para provar que a busca encontrou pelo menos um resultado
-
                 imprimir_registro(&registro);
+                registroValido ++; 
+                
+                // Se a busca incluiu codEstacao, podemos parar (pois é único)
+                if (painel.busca_codEstacao == 1) {
+                    encontrou = 1;
+                    // Libera memória e sai do loop
+                    if (registro.tamNomeEstacao > 0) free(registro.nomeEstacao);
+                    if (registro.tamNomeLinha > 0) free(registro.nomeLinha);
+                    break;
+                }
             }
                 
-            // limpando a memória dos mallocs antes que o while rode novamente
+            // limpando a memória dos mallocs antes que o while rode novamente (executado se não der o break acima)
             if (registro.tamNomeEstacao > 0) free(registro.nomeEstacao);
             if (registro.tamNomeLinha > 0) free(registro.nomeLinha);
         }
 
-        if (registroValido == 0){ // se não tiver nenhum registro válido
-            printf("Registro inexistente.\n");
+        // Verifica o resultado após sair do loop while
+        if (encontrou) {
+            // Já imprimiu e saiu mais cedo, não faz nada
+        } else if (registroValido == 0) {
+            printf("Registro inexistente.\n"); // se não tiver nenhum registro válido
         }  
 
         if (i < n - 1){
