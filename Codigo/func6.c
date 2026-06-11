@@ -136,26 +136,45 @@ void funcionalidade6(const char *arq_dados, const char *arq_indice, int n) {
 
         int encontrou_algum = 0;
 
-        // ESTRATÉGIA 1: BUSCA INDEXADA
-        if (tem_codEstacao && indice_array != NULL) {
-            int rrn = busca_binaria(indice_array, qtd_indice, cod_buscado);
+// ESTRATÉGIA 1: BUSCA INDEXADA (quando a busca inclui codEstacao não nulo)
+if (tem_codEstacao && indice_array != NULL) {
+    // Busca binária para encontrar uma ocorrência qualquer do código
+    int pos = busca_binaria(indice_array, qtd_indice, cod_buscado);
+    
+    if (pos != -1) {
+        // Encontra o primeiro índice com o mesmo código
+        int primeiro = pos;
+        while (primeiro > 0 && indice_array[primeiro - 1].cod == cod_buscado) {
+            primeiro--;
+        }
+        // Encontra o último índice com o mesmo código
+        int ultimo = pos;
+        while (ultimo + 1 < qtd_indice && indice_array[ultimo + 1].cod == cod_buscado) {
+            ultimo++;
+        }
+        
+        // Itera sobre todos os RRNs encontrados
+        for (int k = primeiro; k <= ultimo; k++) {
+            int rrn = indice_array[k].rrn;
             
-            if (rrn != -1) {
-                fseek(fdados, 17 + (rrn * 80), SEEK_SET); 
-                
-                reg_dados reg;
-                memset(&reg, 0, sizeof(reg_dados));
-                
-                if (ler_registro(fdados, &reg) == 1) { 
-                    if (match_registro(&reg, criterios, m)) {
-                        imprimir_registro(&reg);
-                        encontrou_algum = 1;
-                    }
-                    if (reg.tamNomeEstacao > 0 && reg.nomeEstacao) free(reg.nomeEstacao);
-                    if (reg.tamNomeLinha > 0 && reg.nomeLinha) free(reg.nomeLinha);
+            // Posiciona no registro do arquivo de dados
+            fseek(fdados, 17 + (rrn * 80), SEEK_SET);
+            
+            reg_dados reg;
+            memset(&reg, 0, sizeof(reg_dados));
+            
+            if (ler_registro(fdados, &reg) == 1) { // registro válido e não removido
+                if (match_registro(&reg, criterios, m)) {
+                    imprimir_registro(&reg);
+                    encontrou_algum = 1;
                 }
+                // Libera strings alocadas pelo ler_registro
+                if (reg.tamNomeEstacao > 0 && reg.nomeEstacao) free(reg.nomeEstacao);
+                if (reg.tamNomeLinha > 0 && reg.nomeLinha) free(reg.nomeLinha);
             }
-        } 
+        }
+    }
+}
         // ESTRATÉGIA 2: BUSCA SEQUENCIAL (Varredura)
         else {
             fseek(fdados, 17, SEEK_SET); 

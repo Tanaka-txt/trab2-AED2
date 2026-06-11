@@ -20,7 +20,6 @@ int main() {
 
           // Verificamos se a entrada é diferente de vazio
           scanf("%s %s", arq_csv, arq_bin);
-          create_cabecalho();
           create_regi_bin(arq_csv, arq_bin);
           // BinarioNaTela("estacoes.bin"); teste para ver 
           break;
@@ -64,6 +63,8 @@ int main() {
           case 7:
           /*Função*/
           // printf("7\n");
+              scanf("%s %s %d", arq_bin, arq_indice, &n);
+              funcionalidade7(arq_bin, arq_indice, n);
           break;
 
           case 8:
@@ -73,8 +74,8 @@ int main() {
 
           case 9 :
           /*Exit*/
-          scanf("%s %s %d", arq_bin, arq_indice, &n);
-          funcionalidade9(arq_bin, arq_indice, n);
+          // scanf("%s %s %d", arq_bin, arq_indice, &n);
+          // funcionalidade9(arq_bin, arq_indice, n);
           break;
 
         default:

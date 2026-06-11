@@ -13,7 +13,6 @@ Júlio César Tanaka Vergamini - NºUSP 15466276
 
 // func1 - protótipos
 void create_regi_bin(char *arq_csv, char *arq_bin);
-void create_cabecalho();
 
 // Func2- 
 void read_bin(char *arq_bin);
@@ -30,6 +29,6 @@ void funcionalidade5(const char *nome_arq_dados, const char *nome_arq_indice);
                      // Func6-
 void funcionalidade6(const char *arq_dados, const char *arq_indice, int n);
 
-//func9
-void funcionalidade9(const char *arq_dados, const char *arq_indice, int n);
+// Func 7
+void funcionalidade7(const char *arq_dados, const char *arq_indice, int n);
 #endif
