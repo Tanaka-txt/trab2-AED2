@@ -1,4 +1,10 @@
 /*
+Membros do grupo:
+Laysa Almeida de Oliveira - NºUSP 14588002
+Júlio César Tanaka Vergamini - NºUSP 15466276
+*/
+
+/*
 - realizar uma busca por critério --> abrir o arquivo, pular o cabeçalho e usar o while para ler linha por linha (80 em 80 bytes), mas com a opção de procurar por algo
 - o programa vai ler o que o usuário quer buscar (o nome do campo) e qual é o valor (o critério)
 - antes de finalizar e printar igual a func2, precisa de um if de verificação, para saber se a informação lida para comparar com o que está sendo buscado
@@ -35,7 +41,7 @@ typedef struct {
 
 void busca_bin(char *arq_bin){
     FILE *teste = fopen(arq_bin, "rb"); // rb --> read binary
-    if (teste == NULL) { // Verifica se foi possível ler o arquivo binário
+    if (teste == NULL) { // verifica se foi possível ler o arquivo binário
         printf("Falha no processamento do arquivo.\n");
         return;
     }
@@ -68,7 +74,7 @@ void busca_bin(char *arq_bin){
 
             } else if (strcmp(palavra, "nomeEstacao") == 0) {
                 painel.busca_nomeEstacao = 1;
-                ScanQuoteString(painel.valor_nomeEstacao); // A função fornecida que lê strings entre aspas duplas
+                ScanQuoteString(painel.valor_nomeEstacao); // a função fornecida que lê strings entre aspas duplas
 
             } else if (strcmp(palavra, "codLinha") == 0) {
                 painel.busca_codLinha = 1;
@@ -126,7 +132,7 @@ void busca_bin(char *arq_bin){
 
             int pontos = 0; // registro lido começa com zero no filtro. 
 
-            // se o campo está marcado para busca (flag == 1) e o valor lido é igual ao valor buscado, ganha 1 ponto.
+            // se o campo está marcado para busca (flag == 1) e o valor lido é igual ao valor buscado, ganha 1 ponto
             if (painel.busca_codEstacao == 1 && registro.codEstacao == painel.valor_codEstacao) pontos ++; 
             if (painel.busca_codLinha == 1 && registro.codLinha == painel.valor_codLinha) pontos ++;
             if (painel.busca_codProxEstacao == 1 && registro.codProxEstacao == painel.valor_codProxEstacao) pontos ++;
@@ -137,18 +143,17 @@ void busca_bin(char *arq_bin){
             // para os textos, é preciso usar strcmp para realizar a comparação
             if (painel.busca_nomeEstacao == 1 && registro.nomeEstacao != NULL && strcmp (registro.nomeEstacao, painel.valor_nomeEstacao) == 0) pontos ++;
             if (painel.busca_nomeLinha == 1 && registro.nomeLinha != NULL && strcmp (registro.nomeLinha, painel.valor_nomeLinha) == 0) pontos ++;
-            /* A função strcmp quebra o programa se tentar ler um ponteiro NULL. Colocando a verificação '!= NULL' antes do strcmp com '&&', o C testa a existência da string primeiro. 
-               Se for NULL, a verificação "entra em curto-circuito" (já dá a condição inteira como falsa) e ignora a execução do strcmp e não dá Segmentation Fault.
-            */
+            // a função strcmp quebra o programa se tentar ler um ponteiro NULL. Com a verificação '!= NULL' antes do strcmp para testa a existência da string primeiro 
+            // se for NULL, a verificação "entra em curto-circuito" e ignora a execução do strcmp
 
             if (pontos == m){ // se a quantidade de pontos for igual ao nº de exigências vai ser um registro válido
                 imprimir_registro(&registro);
                 registroValido ++; 
                 
-                // Se a busca incluiu codEstacao, podemos parar (pois é único)
+                // se a busca incluiu codEstacao, pode parar (pois é único)
                 if (painel.busca_codEstacao == 1) {
                     encontrou = 1;
-                    // Libera memória e sai do loop
+                    // libera memória e sai do loop
                     if (registro.tamNomeEstacao > 0) free(registro.nomeEstacao);
                     if (registro.tamNomeLinha > 0) free(registro.nomeLinha);
                     break;
@@ -160,9 +165,8 @@ void busca_bin(char *arq_bin){
             if (registro.tamNomeLinha > 0) free(registro.nomeLinha);
         }
 
-        // Verifica o resultado após sair do loop while
+        // verifica o resultado após sair do loop while
         if (encontrou) {
-            // Já imprimiu e saiu mais cedo, não faz nada
         } else if (registroValido == 0) {
             printf("Registro inexistente.\n"); // se não tiver nenhum registro válido
         }  

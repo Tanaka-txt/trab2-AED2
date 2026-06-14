@@ -15,8 +15,9 @@ Júlio César Tanaka Vergamini - NºUSP 15466276
 typedef struct {
     int cod;
     int rrn;
-} IndiceEntry;
+} IndiceEntry; // Struct usada para guardar os pares do arquivo de índice na memória do programa
 
+// Regras para a ordenação dos índices pelo codEstacao de maneira crescente
 static int compare_cod(const void *a, const void *b) {
     IndiceEntry *ia = (IndiceEntry*)a;
     IndiceEntry *ib = (IndiceEntry*)b;
@@ -24,7 +25,7 @@ static int compare_cod(const void *a, const void *b) {
     return ia->rrn - ib->rrn;
 }
 
-// Função que verifica se o registro satisfaz TODOS os critérios (AND logic)
+// Função que verifica se o registro satisfaz todos critérios (cláusulas WHERE)
 static int match_all(reg_dados *reg, char **criterios, int m) {
     for (int i = 0; i < m; i++) {
         char *campo = criterios[i*2];
@@ -33,6 +34,7 @@ static int match_all(reg_dados *reg, char **criterios, int m) {
         // Se o valor é "NULO", trata como NULL
         int is_null_value = (strcmp(valor, "NULO") == 0);
         
+        // Validação dos campos numéricos, se for nulo a comparação é feita com -1
         if (strcmp(campo, "codEstacao") == 0) {
             int val = is_null_value ? -1 : atoi(valor);
             if (reg->codEstacao != val) return 0;
@@ -51,6 +53,8 @@ static int match_all(reg_dados *reg, char **criterios, int m) {
         } else if (strcmp(campo, "codEstIntegra") == 0) {
             int val = is_null_value ? -1 : atoi(valor);
             if (reg->codEstIntegra != val) return 0;
+        
+        // Validação dos campos de texto, tanto busca por campo vazio quanto comparação de caracteres
         } else if (strcmp(campo, "nomeEstacao") == 0) {
             if (is_null_value) {
                 if (reg->nomeEstacao != NULL) return 0;
@@ -67,18 +71,18 @@ static int match_all(reg_dados *reg, char **criterios, int m) {
             }
         }
     }
-    return 1;  // Todos os critérios foram satisfeitos
+    return 1;  // Todos os critérios foram satisfeitos, retorna 1
 }
 
-// Remove entrada do índice primário
+// Remove a entrada do índice primário após a exclusão do registro de dados, localizando a chave e deslocando os próximos registros, sobrescrevendo o valor excluído
 static void remover_do_indice(FILE *fidx, int codEstacao) {
     fseek(fidx, 0, SEEK_END);
     long tam = ftell(fidx);
-    int nReg = (int)((tam - 1) / 8);  // 1 byte header + 8 bytes por registro
+    int nReg = (int)((tam - 1) / 8);  // Cálculo da quantidade de registros
     
     if (nReg == 0) return;
     
-    // Busca binária para achar a posição
+    // Busca binária para achar a posição do registro alvo
     int esq = 0, dir = nReg - 1, pos = -1;
     while (esq <= dir) {
         int meio = (esq + dir) / 2;
@@ -90,9 +94,9 @@ static void remover_do_indice(FILE *fidx, int codEstacao) {
         else                   dir = meio - 1;
     }
     
-    if (pos == -1) return;  // não achou
+    if (pos == -1) return;  // A chave não foi encontrada e interrompe a execução
     
-    // Desloca registros posteriores uma posição para trás
+    // Desloca registros localizados uma posição pra trás no arquivo
     for (int i = pos + 1; i < nReg; i++) {
         fseek(fidx, 1 + i * 8, SEEK_SET);
         int cod, rrn;
@@ -104,7 +108,7 @@ static void remover_do_indice(FILE *fidx, int codEstacao) {
         fwrite(&rrn, 4, 1, fidx);
     }
     
-    // Trunca o último registro
+    // Trunca o último registro, pra remover o registro que ficou duplicado após o deslocamento
     fflush(fidx);
     long novoTam = 1 + (long)(nReg - 1) * 8;
     ftruncate(fileno(fidx), novoTam);
@@ -117,8 +121,7 @@ void funcionalidade7(const char *arq_dados, const char *arq_indice, int n) {
         return;
     }
 
-    // Lê cabeçalho original
-    reg_cabecalho cab;
+    reg_cabecalho cab; // Lê o cabeçalho pra ver se o arquivo não tá corrompido
     fseek(fdados, 0, SEEK_SET);
     fread(&cab.status, 1, 1, fdados);
     fread(&cab.topo, 4, 1, fdados);
@@ -132,17 +135,16 @@ void funcionalidade7(const char *arq_dados, const char *arq_indice, int n) {
     }
     int total_registros = cab.proxRRN;
 
-    // Marca como inconsistente NO ARQUIVO
+    // Muda os status para 0 (inconsistente) no arquivo, se tiver falha de execução a base de dados vai estar corrompida
     fseek(fdados, 0, SEEK_SET);
     char status_inconsistente = '0';
     fwrite(&status_inconsistente, 1, 1, fdados);
 
-    // Processa cada comando DELETE
     for (int b = 0; b < n; b++) {
         int m;
         scanf("%d", &m);
         
-        // Lê os critérios de busca
+        // Lê os critérios de exclusão
         char nomesCampos[10][50];
         char valoresStrings[10][100];
         int  valoresInts[10];
@@ -164,9 +166,9 @@ void funcionalidade7(const char *arq_dados, const char *arq_indice, int n) {
             }
         }
 
-        // Varredura em ordem CRESCENTE
+        // Varredura em ordem crescente do RRN
         for (int rrn = 0; rrn < total_registros; rrn++) {
-            fseek(fdados, 17 + rrn * 80, SEEK_SET);
+            fseek(fdados, 17 + rrn * 80, SEEK_SET); // Posiciona o ponteiro direto no registro utilizando o tamanho do cabeçalho e o RRN
 
             reg_dados reg;
             memset(&reg, 0, sizeof(reg_dados));
@@ -175,7 +177,7 @@ void funcionalidade7(const char *arq_dados, const char *arq_indice, int n) {
             if (ret != 1)
                 continue;
 
-            // Verifica se satisfaz TODOS os critérios
+            // Verifica se todos os critérios são satisfeitos para ver se o registro será removido
             int satisfaz = 1;
             for (int j = 0; j < m; j++) {
                 if (strcmp(nomesCampos[j], "codEstacao") == 0) {
@@ -208,13 +210,13 @@ void funcionalidade7(const char *arq_dados, const char *arq_indice, int n) {
             }
 
             if (satisfaz) {
-                // Verifica se a estação ainda sobrevive em outro registro ativo
+                // Verifica se a estação ainda existe em outro registro ativo, mantendo a consistência do cabeçalho
                 int estacao_ainda_existe = 0;
                 long posAtual = ftell(fdados);
                 fseek(fdados, 17, SEEK_SET);
                 
                 for (int rrn2 = 0; rrn2 < total_registros; rrn2++) {
-                    if (rrn2 == rrn) continue;  // Ignora o próprio registro
+                    if (rrn2 == rrn) continue;  // Ignora o registro alvo da remoção
                     fseek(fdados, 17 + rrn2 * 80, SEEK_SET);
                     
                     reg_dados aux;
@@ -254,7 +256,7 @@ void funcionalidade7(const char *arq_dados, const char *arq_indice, int n) {
                 char rem = '1';
                 fwrite(&rem, 1, 1, fdados);
                 
-                // Encadeia na pilha
+                // Encadeia na pilha de reaproveitamento
                 int novo_prox = cab.topo;
                 fwrite(&novo_prox, 4, 1, fdados);
                 
@@ -276,7 +278,7 @@ void funcionalidade7(const char *arq_dados, const char *arq_indice, int n) {
         }
     }
 
-    // ========== ESCREVE CABEÇALHO FINAL (consistente) ==========
+    // O status retorna para 1, ou seja, consistente e os contadores atualziados são gravados
     cab.status = '1';
     fseek(fdados, 0, SEEK_SET);
     fwrite(&cab.status, 1, 1, fdados);
@@ -286,7 +288,6 @@ void funcionalidade7(const char *arq_dados, const char *arq_indice, int n) {
     fwrite(&cab.nroParesEstacoes, 4, 1, fdados);
     fclose(fdados);
 
-    // Exibe os dois arquivos
     BinarioNaTela((char*)arq_dados);
     BinarioNaTela((char*)arq_indice);
 }

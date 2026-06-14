@@ -15,9 +15,6 @@ int main() {
     getchar(); // limpa o buffer por conta do \n
       switch (option){
         case 1 :
-          /*Função*/
-          // printf("1\n");
-
           // Verificamos se a entrada é diferente de vazio
           scanf("%s %s", arq_csv, arq_bin);
           create_cabecalho();
@@ -26,11 +23,9 @@ int main() {
           break;
 
         case 2 :
-          /*Função*/
           // Ler nome do arquivo binário
           scanf("%s", arq_bin);
           read_bin(arq_bin);
-          // printf("2\n");
           break;
 
         case 3 :
@@ -40,21 +35,18 @@ int main() {
           break;
 
         case 4 :
-          /*Função*/
           // printf("4\n");
           scanf("%s %d", arq_bin, &RRN);
           busca_por_rrn(arq_bin, RRN);
           break;
         
         case 5:
-          /*Função*/
           // printf("5\n");
           scanf("%s %s", arq_bin, arq_indice);
           funcionalidade5(arq_bin, arq_indice);
           break;
         
           case 6:
-          /*Função*/
           // printf("6\n");
           // Leitura dos nomes dos arquivos e número de buscas
           scanf("%s %s %d", arq_bin, arq_indice, &n);
@@ -62,19 +54,16 @@ int main() {
           break;
 
           case 7:
-          /*Função*/
           scanf("%s %s %d", arq_bin, arq_indice, &n);
           funcionalidade7(arq_bin, arq_indice, n);
           break;
 
           case 8:
-          /*Função*/
           scanf("%s %s %d", arq_bin, arq_indice, &n);
           funcionalidade8(arq_bin, arq_indice, n);
           break;
 
           case 9:
-          /*Função*/  
           scanf("%s %s %d", arq_bin, arq_indice, &n);
           funcionalidade9(arq_bin, arq_indice, n);
           break;
