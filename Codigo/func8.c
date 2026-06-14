@@ -15,22 +15,23 @@ Júlio César Tanaka Vergamini - NºUSP 15466276
 typedef struct {
     int cod;
     int rrn;
-} IndiceEntry;
+} IndiceEntry; // Struct usada para guardar os pares do arquivo de índice na memória do programa
 
+// Regras para a ordenação dos registros do índices pelo codEstacao de maneira crescente
 static int compare_cod(const void *a, const void *b) {
     IndiceEntry *ia = (IndiceEntry*)a;
     IndiceEntry *ib = (IndiceEntry*)b;
-    if (ia->cod != ib->cod) return ia->cod - ib->cod;
-    return ia->rrn - ib->rrn;
+    if (ia->cod != ib->cod) return ia->cod - ib->cod; // Ordena por código
+    return ia->rrn - ib->rrn; // Se empata, desempata pelo RRN 
 }
 
 // Insere um novo registro ordenado no índice
 static void inserir_no_indice(FILE *fidx, int codEstacao, int rrn) {
-    fseek(fidx, 0, SEEK_END);
+    fseek(fidx, 0, SEEK_END); // Vai para o final do arquivo para saber quantos registros tem
     long tam = ftell(fidx);
     int nReg = (int)((tam - 1) / 8);  // 1 byte header + 8 bytes por registro
     
-    // Carrega todos os registros do índice
+    // Carrega todos os registros do índice, alocando espaço para a lista atual + 1 novo
     IndiceEntry *lista = malloc(sizeof(IndiceEntry) * (nReg + 1));
     
     fseek(fidx, 1, SEEK_SET);
@@ -39,15 +40,15 @@ static void inserir_no_indice(FILE *fidx, int codEstacao, int rrn) {
         fread(&lista[i].rrn, 4, 1, fidx);
     }
     
-    // Adiciona novo registro
+    // Adiciona novo registro no final
     lista[nReg].cod = codEstacao;
     lista[nReg].rrn = rrn;
     nReg++;
     
-    // Ordena
+    // Ordena tudo usando o qsort
     qsort(lista, nReg, sizeof(IndiceEntry), compare_cod);
     
-    // Reescreve o índice inteiro
+    // Reescreve o índice inteiro que já foi ordenado
     fseek(fidx, 1, SEEK_SET);
     for (int i = 0; i < nReg; i++) {
         fwrite(&lista[i].cod, 4, 1, fidx);
@@ -57,9 +58,9 @@ static void inserir_no_indice(FILE *fidx, int codEstacao, int rrn) {
     free(lista);
 }
 
-// Escreve um registro no arquivo de dados com preenchimento de lixo
+// Escreve um registro no arquivo de dados com  tamanho fixo de 80 bytes e preenchimento de lixo com $
 static void escrever_registro_com_lixo(FILE *fdados, reg_dados *reg) {
-    // Escreve os campos fixos seguindo exatamente o padrão
+    // Escreve os campos fixos seguindo exatamente o padrão do arquivo
     fwrite(&reg->status_removido, 1, 1, fdados);
     fwrite(&reg->prox_queue, sizeof(int), 1, fdados);
     fwrite(&reg->codEstacao, sizeof(int), 1, fdados);
@@ -78,10 +79,9 @@ static void escrever_registro_com_lixo(FILE *fdados, reg_dados *reg) {
     if (reg->tamNomeLinha > 0)
         fwrite(reg->nomeLinha, 1, reg->tamNomeLinha, fdados);
     
-    // Preenche com lixo ($) explicitamente calculando a diferença
     // 37 = status(1) + prox(4) + 6 ints(24) + tamNome(4) + tamLinha(4)
     int bytesEscritos = 37 + reg->tamNomeEstacao + reg->tamNomeLinha;
-    int lixo_bytes = 80 - bytesEscritos;
+    int lixo_bytes = 80 - bytesEscritos; // Cada registro tem que ter 80 bytes no total
     char lixo = '$';
     for (int i = 0; i < lixo_bytes; i++) {
         fwrite(&lixo, 1, 1, fdados);
@@ -95,7 +95,7 @@ void funcionalidade8(const char *arq_dados, const char *arq_indice, int n) {
         return;
     }
 
-    // Lê e verifica cabeçalho do arquivo de dados
+    // Lê e verifica cabeçalho do arquivo de dados e verifica se esta consistente (1)
     reg_cabecalho cab;
     fseek(fdados, 0, SEEK_SET);
     fread(&cab.status, 1, 1, fdados);
@@ -109,14 +109,14 @@ void funcionalidade8(const char *arq_dados, const char *arq_indice, int n) {
         return;
     }
 
-    FILE *fidx = fopen(arq_indice, "r+b");
+    FILE *fidx = fopen(arq_indice, "r+b"); // Abre o arquivo de índice
     if (!fidx) {
         printf("Falha no processamento do arquivo.\n");
         fclose(fdados);
         return;
     }
 
-    // Marca os dois arquivos como inconsistentes
+    // Marca os dois arquivos como inconsistentes antes de começar, pois se o programa cair, dá pra saber se os dados estão bagunçados
     char status_inconsistente = '0';
     fseek(fdados, 0, SEEK_SET);
     fwrite(&status_inconsistente, 1, 1, fdados);
@@ -136,11 +136,9 @@ void funcionalidade8(const char *arq_dados, const char *arq_indice, int n) {
         // Lê os campos de entrada
         char temp[100];
         
-        // codEstacao
         scanf("%s", temp);
         reg.codEstacao = (strcmp(temp, "NULO") == 0) ? -1 : atoi(temp);
 
-        // nomeEstacao
         ScanQuoteString(temp);
         reg.tamNomeEstacao = strlen(temp);
         if (reg.tamNomeEstacao > 0) {
@@ -150,11 +148,9 @@ void funcionalidade8(const char *arq_dados, const char *arq_indice, int n) {
             reg.nomeEstacao = NULL;
         }
 
-        // codLinha
         scanf("%s", temp);
         reg.codLinha = (strcmp(temp, "NULO") == 0) ? -1 : atoi(temp);
 
-        // nomeLinha
         ScanQuoteString(temp);
         reg.tamNomeLinha = strlen(temp);
         if (reg.tamNomeLinha > 0) {
@@ -192,14 +188,14 @@ void funcionalidade8(const char *arq_dados, const char *arq_indice, int n) {
             novo_par = 1;
         }
 
-        // Verifica unicidade percorrendo registros ativos e PISANDO nos removidos
+        // Verifica unicidade percorrendo todos os registros ativos e pulando os removidos
         if (nova_estacao || novo_par) {
             fseek(fdados, 17, SEEK_SET);
             reg_dados aux;
             while (1) {
                 int ret = ler_registro(fdados, &aux);
-                if (ret == 0) break;      // Fim do arquivo (chegou no fim real)
-                if (ret == 2) continue;   // É um registro removido! Pula e continua lendo.
+                if (ret == 0) break;      // Fim do arquivo
+                if (ret == 2) continue;   // É um registro removido. Pula e continua lendo
 
                 // Verifica unicidade de estação pelo nome
                 if (nova_estacao && aux.nomeEstacao != NULL && reg.nomeEstacao != NULL) {
@@ -212,7 +208,7 @@ void funcionalidade8(const char *arq_dados, const char *arq_indice, int n) {
                 if (novo_par && aux.codEstacao != -1 && aux.codProxEstacao != -1) {
                     if ((aux.codEstacao == reg.codEstacao && aux.codProxEstacao == reg.codProxEstacao) ||
                         (aux.codEstacao == reg.codProxEstacao && aux.codProxEstacao == reg.codEstacao)) {
-                        novo_par = 0;
+                        novo_par = 0; // Já existe
                     }
                 }
 
@@ -227,6 +223,7 @@ void funcionalidade8(const char *arq_dados, const char *arq_indice, int n) {
             }
         }
 
+        //Atualiza contadores do cabeçalho
         if (nova_estacao) cab.nroEstacoes++;
         if (novo_par) cab.nroParesEstacoes++;
 
@@ -237,7 +234,7 @@ void funcionalidade8(const char *arq_dados, const char *arq_indice, int n) {
             fflush(fdados);
             rrnDestino = cab.topo;
             long offset = 17 + (long)rrnDestino * 80;
-            fseek(fdados, offset + 1, SEEK_SET);
+            fseek(fdados, offset + 1, SEEK_SET); // +1 pra pular status_removido
             fread(&cab.topo, 4, 1, fdados);
         } else {
             // Insere no final
