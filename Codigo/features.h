@@ -35,4 +35,10 @@ void funcionalidade6(const char *arq_dados, const char *arq_indice, int n);
 //func 7 
 void funcionalidade7(const char *arq_dados, const char *arq_indice, int n);
 
+//func 8
+void funcionalidade8(const char *arq_dados, const char *arq_indice, int n);
+
+//func 9
+// Func9 -
+void funcionalidade9(const char *arq_dados, const char *arq_indice, int n);
 #endif

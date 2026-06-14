@@ -63,19 +63,20 @@ int main() {
 
           case 7:
           /*Função*/
-          // printf("7\n");
-              int n_rem;
-              scanf("%d", &n_rem);
-              funcionalidade7(arq_bin, arq_indice, n_rem);
+          scanf("%s %s %d", arq_bin, arq_indice, &n);
+          funcionalidade7(arq_bin, arq_indice, n);
           break;
 
           case 8:
           /*Função*/
-          // printf("8\n");
+          scanf("%s %s %d", arq_bin, arq_indice, &n);
+          funcionalidade8(arq_bin, arq_indice, n);
           break;
 
-          case 9 :
-          /*Exit*/
+          case 9:
+          /*Função*/  
+          scanf("%s %s %d", arq_bin, arq_indice, &n);
+          funcionalidade9(arq_bin, arq_indice, n);
           break;
 
         default:
