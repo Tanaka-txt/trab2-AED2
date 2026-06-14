@@ -17,7 +17,6 @@ int main() {
         case 1 :
           // Verificamos se a entrada é diferente de vazio
           scanf("%s %s", arq_csv, arq_bin);
-          create_cabecalho();
           create_regi_bin(arq_csv, arq_bin);
           // BinarioNaTela("estacoes.bin"); teste para ver 
           break;

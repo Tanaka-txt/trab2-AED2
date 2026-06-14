@@ -11,19 +11,7 @@ Júlio César Tanaka Vergamini - NºUSP 15466276
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-typedef struct {
-    int cod;
-    int rrn;
-} IndiceEntry; // Struct usada para guardar os pares do arquivo de índice na memória do programa
-
-// Regras para a ordenação dos registros do índices pelo codEstacao de maneira crescente
-static int compare_cod(const void *a, const void *b) {
-    IndiceEntry *ia = (IndiceEntry*)a;
-    IndiceEntry *ib = (IndiceEntry*)b;
-    if (ia->cod != ib->cod) return ia->cod - ib->cod; // Ordena por código
-    return ia->rrn - ib->rrn; // Se empata, desempata pelo RRN 
-}
+#include "utils.h"
 
 // Insere um novo registro ordenado no índice
 static void inserir_no_indice(FILE *fidx, int codEstacao, int rrn) {
@@ -95,15 +83,8 @@ void funcionalidade8(const char *arq_dados, const char *arq_indice, int n) {
         return;
     }
 
-    // Lê e verifica cabeçalho do arquivo de dados e verifica se esta consistente (1)
-    reg_cabecalho cab;
-    fseek(fdados, 0, SEEK_SET);
-    fread(&cab.status, 1, 1, fdados);
-    fread(&cab.topo, 4, 1, fdados);
-    fread(&cab.proxRRN, 4, 1, fdados);
-    fread(&cab.nroEstacoes, 4, 1, fdados);
-    fread(&cab.nroParesEstacoes, 4, 1, fdados);
-    if (cab.status != '1') {
+reg_cabecalho cab;
+    if (!validar_cabecalho(fdados, &cab)) {
         printf("Falha no processamento do arquivo.\n");
         fclose(fdados);
         return;
@@ -213,10 +194,7 @@ void funcionalidade8(const char *arq_dados, const char *arq_indice, int n) {
                 }
 
                 // Limpa alocação pendente do ler_registro
-                if (aux.tamNomeEstacao > 0 && aux.nomeEstacao)
-                    free(aux.nomeEstacao);
-                if (aux.tamNomeLinha > 0 && aux.nomeLinha)
-                    free(aux.nomeLinha);
+                liberar_strings_registro(&aux);
 
                 // Se já invalidou as duas checagens, pode parar de procurar!
                 if (!nova_estacao && !novo_par) break;

@@ -11,68 +11,7 @@ Júlio César Tanaka Vergamini - NºUSP 15466276
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-typedef struct {
-    int cod;
-    int rrn;
-} IndiceEntry; // Struct usada para guardar os pares do arquivo de índice na memória do programa
-
-// Regras para a ordenação dos índices pelo codEstacao de maneira crescente
-static int compare_cod(const void *a, const void *b) {
-    IndiceEntry *ia = (IndiceEntry*)a;
-    IndiceEntry *ib = (IndiceEntry*)b;
-    if (ia->cod != ib->cod) return ia->cod - ib->cod;
-    return ia->rrn - ib->rrn;
-}
-
-// Função que verifica se o registro satisfaz todos critérios (cláusulas WHERE)
-static int match_all(reg_dados *reg, char **criterios, int m) {
-    for (int i = 0; i < m; i++) {
-        char *campo = criterios[i*2];
-        char *valor = criterios[i*2+1];
-        
-        // Se o valor é "NULO", trata como NULL
-        int is_null_value = (strcmp(valor, "NULO") == 0);
-        
-        // Validação dos campos numéricos, se for nulo a comparação é feita com -1
-        if (strcmp(campo, "codEstacao") == 0) {
-            int val = is_null_value ? -1 : atoi(valor);
-            if (reg->codEstacao != val) return 0;
-        } else if (strcmp(campo, "codLinha") == 0) {
-            int val = is_null_value ? -1 : atoi(valor);
-            if (reg->codLinha != val) return 0;
-        } else if (strcmp(campo, "codProxEstacao") == 0) {
-            int val = is_null_value ? -1 : atoi(valor);
-            if (reg->codProxEstacao != val) return 0;
-        } else if (strcmp(campo, "distProxEstacao") == 0) {
-            int val = is_null_value ? -1 : atoi(valor);
-            if (reg->distProxEstacao != val) return 0;
-        } else if (strcmp(campo, "codLinhaIntegra") == 0) {
-            int val = is_null_value ? -1 : atoi(valor);
-            if (reg->codLinhaIntegra != val) return 0;
-        } else if (strcmp(campo, "codEstIntegra") == 0) {
-            int val = is_null_value ? -1 : atoi(valor);
-            if (reg->codEstIntegra != val) return 0;
-        
-        // Validação dos campos de texto, tanto busca por campo vazio quanto comparação de caracteres
-        } else if (strcmp(campo, "nomeEstacao") == 0) {
-            if (is_null_value) {
-                if (reg->nomeEstacao != NULL) return 0;
-            } else {
-                if (reg->nomeEstacao == NULL) return 0;
-                if (strcmp(reg->nomeEstacao, valor) != 0) return 0;
-            }
-        } else if (strcmp(campo, "nomeLinha") == 0) {
-            if (is_null_value) {
-                if (reg->nomeLinha != NULL) return 0;
-            } else {
-                if (reg->nomeLinha == NULL) return 0;
-                if (strcmp(reg->nomeLinha, valor) != 0) return 0;
-            }
-        }
-    }
-    return 1;  // Todos os critérios foram satisfeitos, retorna 1
-}
+#include "utils.h"
 
 // Remove a entrada do índice primário após a exclusão do registro de dados, localizando a chave e deslocando os próximos registros, sobrescrevendo o valor excluído
 static void remover_do_indice(FILE *fidx, int codEstacao) {
@@ -122,13 +61,7 @@ void funcionalidade7(const char *arq_dados, const char *arq_indice, int n) {
     }
 
     reg_cabecalho cab; // Lê o cabeçalho pra ver se o arquivo não tá corrompido
-    fseek(fdados, 0, SEEK_SET);
-    fread(&cab.status, 1, 1, fdados);
-    fread(&cab.topo, 4, 1, fdados);
-    fread(&cab.proxRRN, 4, 1, fdados);
-    fread(&cab.nroEstacoes, 4, 1, fdados);
-    fread(&cab.nroParesEstacoes, 4, 1, fdados);
-    if (cab.status != '1') {
+    if (!validar_cabecalho(fdados, &cab)) {
         printf("Falha no processamento do arquivo.\n");
         fclose(fdados);
         return;
@@ -177,37 +110,7 @@ void funcionalidade7(const char *arq_dados, const char *arq_indice, int n) {
             if (ret != 1)
                 continue;
 
-            // Verifica se todos os critérios são satisfeitos para ver se o registro será removido
-            int satisfaz = 1;
-            for (int j = 0; j < m; j++) {
-                if (strcmp(nomesCampos[j], "codEstacao") == 0) {
-                    if (reg.codEstacao != valoresInts[j]) { satisfaz = 0; break; }
-                } else if (strcmp(nomesCampos[j], "codLinha") == 0) {
-                    if (reg.codLinha != valoresInts[j]) { satisfaz = 0; break; }
-                } else if (strcmp(nomesCampos[j], "codProxEstacao") == 0) {
-                    if (reg.codProxEstacao != valoresInts[j]) { satisfaz = 0; break; }
-                } else if (strcmp(nomesCampos[j], "distProxEstacao") == 0) {
-                    if (reg.distProxEstacao != valoresInts[j]) { satisfaz = 0; break; }
-                } else if (strcmp(nomesCampos[j], "codLinhaIntegra") == 0) {
-                    if (reg.codLinhaIntegra != valoresInts[j]) { satisfaz = 0; break; }
-                } else if (strcmp(nomesCampos[j], "codEstIntegra") == 0) {
-                    if (reg.codEstIntegra != valoresInts[j]) { satisfaz = 0; break; }
-                } else if (strcmp(nomesCampos[j], "nomeEstacao") == 0) {
-                    if (valoresStrings[j][0] == '\0') {
-                        if (reg.nomeEstacao != NULL) { satisfaz = 0; break; }
-                    } else {
-                        if (reg.nomeEstacao == NULL) { satisfaz = 0; break; }
-                        if (strcmp(reg.nomeEstacao, valoresStrings[j]) != 0) { satisfaz = 0; break; }
-                    }
-                } else if (strcmp(nomesCampos[j], "nomeLinha") == 0) {
-                    if (valoresStrings[j][0] == '\0') {
-                        if (reg.nomeLinha != NULL) { satisfaz = 0; break; }
-                    } else {
-                        if (reg.nomeLinha == NULL) { satisfaz = 0; break; }
-                        if (strcmp(reg.nomeLinha, valoresStrings[j]) != 0) { satisfaz = 0; break; }
-                    }
-                }
-            }
+            int satisfaz = atende_filtros_geral(&reg, m, nomesCampos, valoresStrings, valoresInts);
 
             if (satisfaz) {
                 // Verifica se a estação ainda existe em outro registro ativo, mantendo a consistência do cabeçalho
@@ -223,8 +126,7 @@ void funcionalidade7(const char *arq_dados, const char *arq_indice, int n) {
                     memset(&aux, 0, sizeof(reg_dados));
                     int ret2 = ler_registro(fdados, &aux);
                     if (ret2 != 1 || aux.nomeEstacao == NULL) {
-                        if (aux.tamNomeEstacao > 0 && aux.nomeEstacao) free(aux.nomeEstacao);
-                        if (aux.tamNomeLinha > 0 && aux.nomeLinha) free(aux.nomeLinha);
+                        liberar_strings_registro(&aux);
                         continue;
                     }
                     
@@ -234,8 +136,7 @@ void funcionalidade7(const char *arq_dados, const char *arq_indice, int n) {
                         estacao_ainda_existe = 1;
                     }
                     
-                    if (aux.tamNomeEstacao > 0 && aux.nomeEstacao) free(aux.nomeEstacao);
-                    if (aux.tamNomeLinha > 0 && aux.nomeLinha) free(aux.nomeLinha);
+                    liberar_strings_registro(&aux);
                     if (estacao_ainda_existe) break;
                 }
                 
@@ -270,11 +171,13 @@ void funcionalidade7(const char *arq_dados, const char *arq_indice, int n) {
                 }
             }
 
-            if (reg.tamNomeEstacao > 0 && reg.nomeEstacao)
-                free(reg.nomeEstacao);
+            // if (reg.tamNomeEstacao > 0 && reg.nomeEstacao)
+            //     free(reg.nomeEstacao);
 
-            if (reg.tamNomeLinha > 0 && reg.nomeLinha)
-                free(reg.nomeLinha);
+            // if (reg.tamNomeLinha > 0 && reg.nomeLinha)
+            //     free(reg.nomeLinha);
+
+            liberar_strings_registro(&reg);
         }
     }
 

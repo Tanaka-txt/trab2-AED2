@@ -1,9 +1,3 @@
-/*
-Membros do grupo:
-Laysa Almeida de Oliveira - NºUSP 14588002
-Júlio César Tanaka Vergamini - NºUSP 15466276
-*/
-
 #include "features.h"
 #include "registro.h"
 #include "leitura.h"
@@ -11,12 +5,7 @@ Júlio César Tanaka Vergamini - NºUSP 15466276
 #include "fornecidas.h"
 #include <stdlib.h>
 #include <string.h>
-
-// struct para guardar o código de estação e o rrn  do registro correspondente.
-typedef struct {
-    int cod; // cod estação
-    int rrn; // posição relativa do registro no arquivo de dados (RRN)
-} IndiceEntry;
+#include "utils.h"
 
 // Estrutura que funciona como uma "cláusula WHERE" do SQL.
 // Guarda qual campo o usuário quer buscar e o valor esperado.
@@ -222,7 +211,6 @@ void funcionalidade6(const char *arq_dados, const char *arq_indice, int n) {
             printf("Registro inexistente.\n"); 
         }
     }
-
 
     // limpeza da memória alocada e fechamento dos arquivos
     if (indice_array) free(indice_array);
