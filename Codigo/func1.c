@@ -9,38 +9,14 @@ Júlio César Tanaka Vergamini - NºUSP 15466276
 #include "registro.h"
 #include "fornecidas.h"
 
-// Definição de Var
-int ultimoRRN = 0; // tem que apontar para uma atualização do RRN
-
-// Nro estacoes
-char **estacao = NULL;
-int total_estacoes = 0;
-
-// Cria Cabeçalho
-reg_cabecalho cabecalho;
-reg_dados registro;
-
 // Struct de auxilio para verificar a paridade das estações
 typedef struct{
     int origem;
     int destino;
 } Par;
 
-// Pares Estações
-Par *pares = NULL;
-int total_pares = 0;
-
 // Protótipo da função de escrita
 void write_registro_bin(reg_dados dados, FILE *binario);
-
-// Inicio Funções
-void create_cabecalho(){
-    cabecalho.status = '1';
-    cabecalho.topo = -1;
-    cabecalho.proxRRN = 0;
-    cabecalho.nroEstacoes = 0;
-    cabecalho.nroParesEstacoes = 0;
-}
 
 int existe_estacao(char *nome, char **lista, int tamanho){
     for(int i = 0; i < tamanho; i++){
@@ -59,6 +35,15 @@ int existe_par(int a, int b, Par *lista, int tamanho){
 }
 
 void create_regi_bin(char arq_csv[256], char arq_bin[256]){
+    // Agora tudo é variável local! Nada de variáveis globais.
+    reg_cabecalho cabecalho;
+    reg_dados registro;
+    int ultimoRRN = 0; 
+    char **estacao = NULL;
+    int total_estacoes = 0;
+    Par *pares = NULL;
+    int total_pares = 0;
+    
     FILE *csv = fopen(arq_csv, "r");
     FILE *binario = fopen(arq_bin, "wb");
 
@@ -67,10 +52,14 @@ void create_regi_bin(char arq_csv[256], char arq_bin[256]){
         return;
     }
 
-    create_cabecalho();
-    cabecalho.status = '0';
+    // Inicializando o cabeçalho na mão (Status '0' indicando que estamos editando)
+    cabecalho.status = '0'; 
+    cabecalho.topo = -1;
+    cabecalho.proxRRN = 0;
+    cabecalho.nroEstacoes = 0;
+    cabecalho.nroParesEstacoes = 0;
 
-    // Escreve cabeçalho inicial
+    // Escreve cabeçalho inicial de 17 bytes completos
     fwrite(&cabecalho.status, 1, 1, binario);
     fwrite(&cabecalho.topo, sizeof(int), 1, binario);
     fwrite(&cabecalho.proxRRN, sizeof(int), 1, binario);
@@ -115,22 +104,13 @@ void create_regi_bin(char arq_csv[256], char arq_bin[256]){
         ultimoRRN++;
     }
 
-    // Fecha para garantir flush dos dados
-    fclose(binario);
-
-    // Reabre para atualizar cabeçalho
-    binario = fopen(arq_bin, "rb+");
-    if(binario == NULL){
-        printf("Falha no processamento do arquivo.\n");
-        fclose(csv);
-        return;
-    }
-
-    cabecalho.status = '1';
+    // O loop acabou, vamos atualizar as contagens do cabeçalho
+    cabecalho.status = '1'; // Consistente! Tudo deu certo.
     cabecalho.proxRRN = ultimoRRN;
     cabecalho.nroEstacoes = total_estacoes;
     cabecalho.nroParesEstacoes = total_pares;
 
+    // MAGIA DO FSEEK: Volta pro byte zero do arquivo binário e sobrescreve o cabeçalho antigo
     fseek(binario, 0, SEEK_SET);
     fwrite(&cabecalho.status, 1, 1, binario);
     fwrite(&cabecalho.topo, sizeof(int), 1, binario);
@@ -138,6 +118,7 @@ void create_regi_bin(char arq_csv[256], char arq_bin[256]){
     fwrite(&cabecalho.nroEstacoes, sizeof(int), 1, binario);
     fwrite(&cabecalho.nroParesEstacoes, sizeof(int), 1, binario);
 
+    // Agora sim, o arquivo é fechado apenas UMA vez no final do processo
     fclose(csv);
     fclose(binario);
 
@@ -151,11 +132,6 @@ void create_regi_bin(char arq_csv[256], char arq_bin[256]){
     }
     free(estacao);
     estacao = NULL;
-
-    // Reset variáveis globais
-    total_estacoes = 0;
-    total_pares = 0;
-    ultimoRRN = 0;
 
     BinarioNaTela(arq_bin);
 }

@@ -10,25 +10,7 @@ Júlio César Tanaka Vergamini - NºUSP 15466276
 #include "fornecidas.h"
 #include <stdlib.h>
 #include <string.h>
-
-// struct para guardar o codigo de estação e o rrn.
-typedef struct {
-    int cod; // cod estação
-    int rrn; // Relative Record Number (RRN)
-} IndiceEntry;
-
-// func pra ordenar o vetor de indices usa o código de estação como primeira chave e o rrn para desempate
-static int compare_cod(const void *a, const void *b) {
-    IndiceEntry *entryA = (IndiceEntry *)a;
-    IndiceEntry *entryB = (IndiceEntry *)b;
-
-    // ordena de de forma crescente pelo codigo de estação.
-    if (entryA->cod != entryB->cod) {
-        return entryA->cod - entryB->cod;
-    } else { // criterio para desempatar quando o código de estação for igual, ordena com RRN de forma crescente.
-        return entryA->rrn - entryB->rrn;
-    }
-}
+#include "utils.h"
 
 // Cria o indice primario do arquivo de dados, ordena e grava.
 void funcionalidade5(const char *nome_arq_dados, const char *nome_arq_indice) {

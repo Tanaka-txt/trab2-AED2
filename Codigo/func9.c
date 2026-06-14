@@ -10,23 +10,11 @@ Júlio César Tanaka Vergamini - NºUSP 15466276
 #include "fornecidas.h"
 #include <stdlib.h>
 #include <string.h>
+#include "utils.h"
 
 #define TAM_CABECALHO  17
 #define TAM_REGISTRO   80
 #define VALOR_NULO     -1
-
-typedef struct {
-    int cod;
-    int rrn;
-} IndiceEntry9; // Struct usada para guardar os pares do arquivo de índice na memória do programa
-
-// Função de comparação que é usada pelo qsort para manter o índice ordenado pelo codEstacao
-static int comparar_indice9(const void *a, const void *b) {
-    const IndiceEntry9 *ia = (const IndiceEntry9 *)a;
-    const IndiceEntry9 *ib = (const IndiceEntry9 *)b;
-    if (ia->cod != ib->cod) return ia->cod - ib->cod;
-    return ia->rrn - ib->rrn;
-}
 
 // Carrega o índice inteiro, acha o código antigo, troca pelo novo, ordena e salva no arquivo
 static void atualizar_chave_indice9(FILE *fIndice, int codAntigo, int codNovo, int rrn) {
@@ -35,7 +23,7 @@ static void atualizar_chave_indice9(FILE *fIndice, int codAntigo, int codNovo, i
     int  nReg = (int)((tam - 1) / 8);
     if (nReg <= 0) return;
 
-    IndiceEntry9 *lista = malloc(sizeof(IndiceEntry9) * nReg);  // Cria uma lista na memória para caber todos os índices
+    IndiceEntry *lista = malloc(sizeof(IndiceEntry) * nReg);  // Cria uma lista na memória para caber todos os índices
     if (!lista) return;
 
     // Pula o status '0' ou '1' e lê os dados do índice
@@ -53,7 +41,7 @@ static void atualizar_chave_indice9(FILE *fIndice, int codAntigo, int codNovo, i
         }
     }
 
-    qsort(lista, nReg, sizeof(IndiceEntry9), comparar_indice9); // Organiza o array para poder manter a buscar binária do índice funcionando
+    qsort(lista, nReg, sizeof(IndiceEntry), compare_cod); // Organiza o array para poder manter a buscar binária do índice funcionando
 
     fseek(fIndice, 1, SEEK_SET); // Volta pro começo do arquivo (pulando o status) e grava a lista atualizada
     for (int i = 0; i < nReg; i++) {
@@ -100,40 +88,6 @@ static void reescrever_registro9(FILE *fDados, reg_dados *reg, int rrn) {
     char c = '$';
     for (int i = 0; i < lixo; i++)
         fwrite(&c, 1, 1, fDados);
-}
-
-// Verifica se o registro tem todos os critérios de busca que o usuário digitou
-static int atende_filtros9(reg_dados *reg, int m, char nomesCampos[][50], char valoresStr[][100], int  valoresInt[]) {
-    for (int j = 0; j < m; j++) {
-        if (strcmp(nomesCampos[j], "codEstacao") == 0) {
-            if (reg->codEstacao != valoresInt[j]) return 0;
-        } else if (strcmp(nomesCampos[j], "codLinha") == 0) {
-            if (reg->codLinha != valoresInt[j]) return 0;
-        } else if (strcmp(nomesCampos[j], "codProxEstacao") == 0) {
-            if (reg->codProxEstacao != valoresInt[j]) return 0;
-        } else if (strcmp(nomesCampos[j], "distProxEstacao") == 0) {
-            if (reg->distProxEstacao != valoresInt[j]) return 0;
-        } else if (strcmp(nomesCampos[j], "codLinhaIntegra") == 0) {
-            if (reg->codLinhaIntegra != valoresInt[j]) return 0;
-        } else if (strcmp(nomesCampos[j], "codEstIntegra") == 0) {
-            if (reg->codEstIntegra != valoresInt[j]) return 0;
-        } else if (strcmp(nomesCampos[j], "nomeEstacao") == 0) {
-            if (valoresStr[j][0] == '\0') {
-                if (reg->nomeEstacao != NULL && reg->tamNomeEstacao > 0) return 0;
-            } else {
-                if (reg->nomeEstacao == NULL) return 0;
-                if (strcmp(reg->nomeEstacao, valoresStr[j]) != 0) return 0;
-            }
-        } else if (strcmp(nomesCampos[j], "nomeLinha") == 0) {
-            if (valoresStr[j][0] == '\0') {
-                if (reg->nomeLinha != NULL && reg->tamNomeLinha > 0) return 0;
-            } else {
-                if (reg->nomeLinha == NULL) return 0;
-                if (strcmp(reg->nomeLinha, valoresStr[j]) != 0) return 0;
-            }
-        }
-    }
-    return 1; // Se não parou em nenhum "return 0", é por que atendeu a todos os critérios
 }
 
 /* Altera a struct na memória com os novos valores antes de gravar no arquivo. É preciso usar o "free" nas 
@@ -279,7 +233,7 @@ void funcionalidade9(const char *arq_dados, const char *arq_indice, int n) {
             }
 
             // Registro válido, testa se ele vai bater com a busca
-            if (atende_filtros9(&reg, mFiltros, nomesCamposB, valoresStrB, valoresIntB)) {
+            if (atende_filtros_geral(&reg, mFiltros, nomesCamposB, valoresStrB, valoresIntB)) {
                 int mudouCodEstacao = 0;
                 int codAntigo       = reg.codEstacao;
 

@@ -25,6 +25,7 @@ Lê os 'm' filtros que o usuário deseja aplicar na busca. O processo de leitura
 #include "leitura.h"
 #include "fornecidas.h"
 #include "registro.h"
+#include "utils.h"
 
 // com esse "painel", o usuário digita o que ele quer, o programa lê a palavra e mudar a flag (busca_X) de 0 para 1 para indicar que aquele campo será filtrado
 // a struct agrupa as flags (se busca ou não) e os valores buscados (critério)
@@ -57,58 +58,35 @@ void busca_bin(char *arq_bin){
 
         for (int j = 0; j < m; j++){ // laço para ler os pares "nomeCampo" e "valorCampo" que compõem os filtros
             char palavra [30];       // vetor de char para armazenar o nome do campo digitado
-            char aux[50];            // buffer temporário para ler o valor, evitando que strings "NULO" quebrem a leitura de inteiros
             scanf("%s", palavra);    // lê o campo que o usuário quer buscar
 
             // strcmp vai comparar as strings, caracter por caracter e verifica se são iguais ou não
             if (strcmp(palavra, "codEstacao") == 0) {
-                painel.busca_codEstacao = 1;                // significa que o usuário quer pesquisar isso
-                scanf("%s", aux);                           // lê o valor como texto primeiro para tratar valores nulos
-                
-                // verificar o que tem dentro de aux --> texto ou inteiro
-                if (strcmp(aux, "NULO") == 0) {             // se o texto for "NULO", o valor vira -1
-                    painel.valor_codEstacao = -1;
-                } else {                                    // se não for "NULO" significa que é um número
-                    painel.valor_codEstacao = atoi(aux);    // a função atoi() pega o texto e converte em número inteiro
-                }
+                // significa que o usuário quer pesquisar isso. Lê o texto e converte para número ou trata o "NULO"
+                ler_criterio_int(&painel.busca_codEstacao, &painel.valor_codEstacao);
 
             } else if (strcmp(palavra, "nomeEstacao") == 0) {
                 painel.busca_nomeEstacao = 1;
                 ScanQuoteString(painel.valor_nomeEstacao); // a função fornecida que lê strings entre aspas duplas
 
             } else if (strcmp(palavra, "codLinha") == 0) {
-                painel.busca_codLinha = 1;
-                scanf("%s", aux);
-                if (strcmp(aux, "NULO") == 0) painel.valor_codLinha = -1;
-                else painel.valor_codLinha = atoi(aux);
+                ler_criterio_int(&painel.busca_codLinha, &painel.valor_codLinha);
 
             } else if (strcmp(palavra, "nomeLinha") == 0) {
                 painel.busca_nomeLinha = 1;
                 ScanQuoteString(painel.valor_nomeLinha);
 
             } else if (strcmp(palavra, "codProxEstacao") == 0) {
-                painel.busca_codProxEstacao = 1;
-                scanf("%s", aux);
-                if (strcmp(aux, "NULO") == 0) painel.valor_codProxEstacao = -1;
-                else painel.valor_codProxEstacao = atoi(aux);
+                ler_criterio_int(&painel.busca_codProxEstacao, &painel.valor_codProxEstacao);
 
             } else if (strcmp(palavra, "distProxEstacao") == 0) {
-                painel.busca_distProxEstacao = 1;
-                scanf("%s", aux);
-                if (strcmp(aux, "NULO") == 0) painel.valor_distProxEstacao = -1;
-                else painel.valor_distProxEstacao = atoi(aux);
+                ler_criterio_int(&painel.busca_distProxEstacao, &painel.valor_distProxEstacao);
 
             } else if (strcmp(palavra, "codLinhaIntegra") == 0) {
-                painel.busca_codLinhaIntegra = 1;
-                scanf("%s", aux);
-                if (strcmp(aux, "NULO") == 0) painel.valor_codLinhaIntegra = -1;
-                else painel.valor_codLinhaIntegra = atoi(aux);
+                ler_criterio_int(&painel.busca_codLinhaIntegra, &painel.valor_codLinhaIntegra);
 
             } else if (strcmp(palavra, "codEstIntegra") == 0) {
-                painel.busca_codEstIntegra = 1;
-                scanf("%s", aux);
-                if (strcmp(aux, "NULO") == 0) painel.valor_codEstIntegra = -1;
-                else painel.valor_codEstIntegra = atoi(aux);
+                ler_criterio_int(&painel.busca_codEstIntegra, &painel.valor_codEstIntegra);
             }
         }  
         
@@ -154,15 +132,13 @@ void busca_bin(char *arq_bin){
                 if (painel.busca_codEstacao == 1) {
                     encontrou = 1;
                     // libera memória e sai do loop
-                    if (registro.tamNomeEstacao > 0) free(registro.nomeEstacao);
-                    if (registro.tamNomeLinha > 0) free(registro.nomeLinha);
+                    liberar_strings_registro(&registro);
                     break;
                 }
             }
                 
             // limpando a memória dos mallocs antes que o while rode novamente (executado se não der o break acima)
-            if (registro.tamNomeEstacao > 0) free(registro.nomeEstacao);
-            if (registro.tamNomeLinha > 0) free(registro.nomeLinha);
+            liberar_strings_registro(&registro);
         }
 
         // verifica o resultado após sair do loop while
